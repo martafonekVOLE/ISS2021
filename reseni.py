@@ -1,7 +1,10 @@
 from ctypes import sizeof
+from math import dist, sqrt
 from scipy.io import wavfile
 from scipy.fft import fft
 from scipy.signal import spectrogram
+from scipy.signal import find_peaks
+import soundfile as sf
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -64,11 +67,11 @@ print("Střední hodnota: ", int(median))
 consentratedSamples = []
 for sample in samples:
     consentratedSamples.append(sample - int(median))
-    
+
 #normalizace signálu
 absValue = maxSample - int(median)
 if(((minSample-int(median)*(-1)) > maxSample)):
-    absValue = minSample*(-1)
+    absValue = minSample*(-1)                       #chyba?
 
 normalizedSamples = []
 for consSample in consentratedSamples:
@@ -134,6 +137,9 @@ while True:
             subMatrix = []
             i2 = 0
             x = x + 1
+#nebo
+#délka rámce = list(sf.blocks(".wav", blocksize, overflow))
+
 
 #délka jednoho rámce
 frameTimeIn_s = 1024/samples_freq
@@ -148,6 +154,7 @@ plt.xlabel("Čas [t]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
+
 #plt.show()  #--UNCOMMENT
 
 #========================================================
@@ -165,6 +172,7 @@ k = n.reshape((N,1))
 M = np.exp(-2j * np.pi * k * n / N)
 FFTresult = np.dot(M, matrix[2])
 
+
 if(np.allclose(FFTresult, testFFT) == True):
     print("Moje FFT se shoduje s scipy.fft!")
 else:
@@ -180,7 +188,7 @@ while True:
     i = i + 1
 
 x = np.arange(0, samples_freq/2, samples_freq/2/512) #od nuly po FS/2 (1024 vzorků)
-y = np.abs(FFTresultToPrint)   #má délku 1024 prvků
+y = np.abs(FFTresultToPrint)   #má délku 1024 prvků FFTresult[:512]
 plt.figure(figsize=(10, 5))
 plt.title("Graf DFT - rámec 2")
 plt.xlabel("Frekvence [Hz]")
@@ -188,25 +196,107 @@ plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
 #plt.show()
+#print(np.max(np.abs(np.real(testFFT))))
 
 #========================================================
 # Úkol 4
 #========================================================
 #spektrogram
-freq, times, spectro = spectrogram(samples, samples_freq)
 
-plt.pcolormesh(times, freq, spectro)
-plt.imshow(spectro)
-plt.ylabel("Frequency [Hz]")
-plt.xlabel("Time [s]")
+normalizedSamplesSpectrum = np.array(normalizedSamples)
+
+freq, time, spectro = spectrogram(normalizedSamplesSpectrum, samples_freq)
+
+plt.figure(figsize=(10, 5))
+plt.title("Spectrogram")
+plt.grid(False)
+plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet')
+plt.colorbar()
+plt.ylabel('f[Hz]')
+plt.xlabel('t[s]')
+#plt.show()
+
+#========================================================
+# Úkol 5
+#========================================================
+#detekce rušivých signálů
+disturbingOnes = []
+disturbingFreq = []
+i = 0
+peaks, _ = find_peaks(np.abs(FFTresultToPrint), distance=50, height=2)
+np.diff(peaks)
+
+#výpis indexů rušivých signálů
+print(peaks)
+
+while True:
+    if i == 4:
+        break
+    disturbingOnes.append(FFTresultToPrint[peaks[i]])
+    i += 1
+#výpis hodnot rušivých signálů
+print(disturbingOnes)
+
+i = 0
+for p in peaks:
+    disturbingFreq.append(peaks[i]*samples_freq/N)
+    i += 1
+#výpis rušivých frekvencí
+print(disturbingFreq)
+
+#vykreslení peaků
+plt.figure(figsize=(10,5))
+plt.plot(np.abs(FFTresultToPrint))
+plt.plot(peaks, np.abs(FFTresultToPrint)[peaks], "x")
 plt.show()
 
+#ověření harmonické vztažnosti
+i = 1
+deviation = samples_freq / N
 
+print("Nejmenší frekvence je:", disturbingFreq[0], "Hz")
+while True:
+    if i == 4:
+        break
+    if ((disturbingFreq[i]-(i*deviation))/disturbingFreq[0]):
+        print("Frekvence", disturbingFreq[i], "Hz je harmonická!")
+    else:
+        print("Frekvence", disturbingFreq[i], "Hz je enharmonická!")
+    i += 1
+print("Při ověřování harmoničnosti je třeba brát v úvahu odchylku po DFT, která činí", deviation, "(Fs/N).")
 
+#========================================================
+# Úkol 6
+#========================================================
+#generování frekvencí
 
+samplesArr = []
+i = 0
+#tvorba časových vzorků
+while True:
+    if i == amountOf_samples:
+        break
 
+    samplesArr.append(i/samples_freq)
+    i += 1
 
+#generování finální cosinusovky
+i = range(4)
+out_cos = []
+finalCos = 0
+for each in i:
+    frq = disturbingFreq[each]
+    out_cos.append(np.cos(2 * np.pi * frq * np.array(samplesArr)))
+    finalCos += out_cos[each]
 
+wavfile.write("audio/4cos.wav", samples_freq, finalCos.astype(np.int16))       #potichu, int8 lepší, ale nekvalitní
+test,_ = wavfile.read("audio/4cos.wav")
 
+if(test != 0): print("Signál složený z rušivých cosinusovek úspěšně vytvořen do audio/4cos.wav.")
+else: print("Došlo k chybě při tvorbě signálu.")
+
+#========================================================
+# Úkol 6
+#========================================================
 
 
