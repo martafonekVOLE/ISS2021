@@ -4,6 +4,7 @@
 \usepackage[T1]{fontenc}
 \usepackage[czech]{babel}
 \usepackage{graphicx}
+\usepackage{multicol}
 \usepackage[left=1.8cm,text={18cm, 25cm},top=1.8cm]{geometry}
 \title{Signály a systémy}
 \author{Martin Pech\\xpechm00@stud.vutbr.cz}
@@ -93,6 +94,17 @@
 	\hspace*{-0.5cm} 
 	\includegraphics[scale=0.37]{Figure_11}
 	
+	\section{Vyfiltrovaný signál}
+	Po ověření správnosti předchozích kroků jsem vyfiltroval původní, normalizovaný signál. Ověřil jsem, že je signál po filtraci v dynamickém rozsahu od \texttt{-1} do \texttt{+1}. Výslednou nahrávku jsem uložil do \texttt{audio/clean\_bandstop.wav}. Po poslechnutí nahrávky je patrné, že nežádoucí šumy byly potlačeny. Výsledkem je \textbf{čistá} nahrávka.
 	
-
+	\section{Poznámky k implementaci}
+	\begin{itemize}
+		\item Řešeno v jazyce Python (soubor \textit{reseni.py} obsahuje kompletní řešení tohoto projektu).
+		\item Program funguje jako konzolová aplikace a vypisuje žádoucí informace na standartní výstup (\textit{včetně výsledků zpětných kontrol a porovnání}).
+		\item Program po spuštění ukládá všechny generované grafy do složky, ve které je uložen.
+		\item Program po spuštění ukládá požadované audionahrávky (\textit{4cos.wav} a \textit{clean\_bandstop.wav} do složky /audio).
+		\item Při implementaci jsem použil řadu funkcí a knihoven, které přímo nejsou součástí základních funkcí a knihoven jazyka Python. Všechny takové jsem zmínil v této zprávě.
+		\item Všechny obrázky v této zprávě jsou vektorové, je tedy možné si je přiblížit se zachováním kvality.
+		\item Jelikož je toto můj první program napsaný v jazyce Python (s výjimkou \textit{hello world}), často jsem se ve snaze pracovat s nějakou funkcí a pochopit ji obrátil k materiálům Ing. Žmolíkové, nebo k oficiálním dokumentacím. S těmito materiály tedy může vznikat jistá podobnost.
+	\end{itemize}
 \end{document}
