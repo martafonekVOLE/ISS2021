@@ -1,12 +1,13 @@
-from ctypes import sizeof
-from math import dist, sqrt
-from scipy.io import wavfile
-from scipy.fft import fft
-from scipy.signal import spectrogram
-from scipy.signal import find_peaks
 import soundfile as sf
 import numpy as np
 import matplotlib.pyplot as plt
+from ctypes import sizeof
+from math import dist, sqrt
+from typing import final
+from scipy.io import wavfile
+from scipy.fft import fft
+from scipy.signal import spectrogram, lfilter, filtfilt, find_peaks, buttord, butter
+from scipy.signal.filter_design import freqz, tf2zpk
 
 #========================================================
 # Úkol 1
@@ -44,6 +45,8 @@ print("Nejvyšší vzorek:", maxSample)
 print("Nejmenší vzorek:", minSample)
 
 #graf k zadanému signálu
+figureCounter = 1
+
 textMaxMin = 'Max: %d\nMin: %d\n'%(maxSample, minSample)
 x = np.arange(0, timeIn_s, timeIn_s/amountOf_samples)
 y = samples
@@ -55,12 +58,13 @@ plt.grid(True)
 plt.figtext(0.91, 0.45, textMaxMin, fontsize=7, color="blue", va="center")
 plt.plot(x,y)
 #plt.show()  #--UNCOMMENT
-
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
 #========================================================
 # Úkol 2
 #========================================================
 median = 0
-median = np.median(samples) #np.mean -> průměr (0)
+median = np.median(samples) #np.mean -> průměr (0) TODO headclass tvrdií mean, já myslel median
 print("Střední hodnota: ", int(median))
 
 #ustředění signálu 
@@ -77,6 +81,7 @@ normalizedSamples = []
 for consSample in consentratedSamples:
     consSample = consSample/absValue
     normalizedSamples.append(consSample)
+
 #ověření, že normalizovaný signál je v mezích -1 & 1
 exitCode = 0
 for consSample in normalizedSamples:
@@ -143,17 +148,19 @@ while True:
 
 #délka jednoho rámce
 frameTimeIn_s = 1024/samples_freq
-print(frameTimeIn_s)
 
 #generování grafu hezkého rámce
 x = np.arange(0, frameTimeIn_s, frameTimeIn_s/1024)
-y = matrix[2]
+y = matrix[35]
 plt.figure(figsize=(10, 5))
 plt.title("Znělý signál - rámec 2")
 plt.xlabel("Čas [t]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
+
 
 #plt.show()  #--UNCOMMENT
 
@@ -163,22 +170,23 @@ plt.plot(x,y)
 #testovací FFT funkce z knihovny scipy
 testFFT = []
 FFTresult = []
-testFFT = fft(matrix[2])
+testFFT = fft(matrix[35]) #TODO maybe 23?
 
 #moje FFT funkce            TODO - je správně? Správný rámec? Co ukazovat má? Co je tam navíc (na začátku) Správné osy
 N = 1024
 n = np.arange(N)
 k = n.reshape((N,1))
 M = np.exp(-2j * np.pi * k * n / N)
-FFTresult = np.dot(M, matrix[2])
+FFTresult = np.dot(M, matrix[35])
 
-
+#srovnání mojí DFT funkce s FFT funkcí
 if(np.allclose(FFTresult, testFFT) == True):
     print("Moje FFT se shoduje s scipy.fft!")
 else:
     print("Moje FFT se neshoduje s scipy.fft!")
 
-#graf k DFT
+#načtení periodického rámce do FFTresult
+FFTresult = np.dot(M, matrix[2])
 FFTresultToPrint = []
 i = 1
 while True:
@@ -187,14 +195,17 @@ while True:
     FFTresultToPrint.append(FFTresult[i])
     i = i + 1
 
+#graf k DFT - použití znělého rámce, tj. rámce číslo 8
 x = np.arange(0, samples_freq/2, samples_freq/2/512) #od nuly po FS/2 (1024 vzorků)
-y = np.abs(FFTresultToPrint)   #má délku 1024 prvků FFTresult[:512]
+y = np.abs(FFTresult[1:513])   #má délku 1024 prvků FFTresult[:512]
 plt.figure(figsize=(10, 5))
 plt.title("Graf DFT - rámec 2")
 plt.xlabel("Frekvence [Hz]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
 #plt.show()
 #print(np.max(np.abs(np.real(testFFT))))
 
@@ -205,7 +216,7 @@ plt.plot(x,y)
 
 normalizedSamplesSpectrum = np.array(normalizedSamples)
 
-freq, time, spectro = spectrogram(normalizedSamplesSpectrum, samples_freq)
+freq, time, spectro = spectrogram(normalizedSamplesSpectrum, samples_freq)#, nperseg=1024, noverlap=512) TODO!!
 
 plt.figure(figsize=(10, 5))
 plt.title("Spectrogram")
@@ -214,6 +225,8 @@ plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet'
 plt.colorbar()
 plt.ylabel('f[Hz]')
 plt.xlabel('t[s]')
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
 #plt.show()
 
 #========================================================
@@ -227,28 +240,26 @@ peaks, _ = find_peaks(np.abs(FFTresultToPrint), distance=50, height=2)
 np.diff(peaks)
 
 #výpis indexů rušivých signálů
-print(peaks)
+print("Indexy jednotlivých rušivých frekvencí", peaks)
 
 while True:
     if i == 4:
         break
     disturbingOnes.append(FFTresultToPrint[peaks[i]])
     i += 1
-#výpis hodnot rušivých signálů
-print(disturbingOnes)
 
 i = 0
 for p in peaks:
     disturbingFreq.append(peaks[i]*samples_freq/N)
     i += 1
 #výpis rušivých frekvencí
-print(disturbingFreq)
+print("Hodnoty jednotlivých rušivých frekvencí:", disturbingFreq)
 
 #vykreslení peaků
-plt.figure(figsize=(10,5))
-plt.plot(np.abs(FFTresultToPrint))
-plt.plot(peaks, np.abs(FFTresultToPrint)[peaks], "x")
-plt.show()
+#plt.figure(figsize=(10,5))
+#plt.plot(np.abs(FFTresultToPrint))
+#plt.plot(peaks, np.abs(FFTresultToPrint)[peaks], "x")
+#plt.show()
 
 #ověření harmonické vztažnosti
 i = 1
@@ -289,14 +300,187 @@ for each in i:
     out_cos.append(np.cos(2 * np.pi * frq * np.array(samplesArr)))
     finalCos += out_cos[each]
 
+
 wavfile.write("audio/4cos.wav", samples_freq, finalCos.astype(np.int16))       #potichu, int8 lepší, ale nekvalitní
 test,_ = wavfile.read("audio/4cos.wav")
 
 if(test != 0): print("Signál složený z rušivých cosinusovek úspěšně vytvořen do audio/4cos.wav.")
 else: print("Došlo k chybě při tvorbě signálu.")
 
+
+#generování spektrogramu finální cosinusovky            TODO je to tak? TODO upravit DFT -> graf
+freq, time, spectro = spectrogram(finalCos, samples_freq)
+
+plt.figure(figsize=(10, 5))
+plt.title("Spectrogram výsledné cosinusovky")
+plt.grid(False)
+plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet')
+plt.colorbar()
+plt.ylabel('f[Hz]')
+plt.xlabel('t[s]')
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
+#plt.show()
 #========================================================
-# Úkol 6
+# Úkol 7
+#========================================================
+#pásmová zádrž jednotlivých rušivých frekvencí
+
+#pásmová zádrž nejnižší rušívé frekvence
+#jednotkový impuls
+amountOfimpulses = 120
+impuls = [1, *np.zeros(amountOfimpulses-1)]
+
+#generování jednotlivých impulsních odezev
+i = 0
+generateNoiseFreeSignal = []
+while True:
+    if i == 4:
+        break
+    amountOf_impulses = amountOfimpulses - (i*15)
+    impuls = [1, *np.zeros(amountOf_impulses-1)]
+
+    firstOne, secondOne = buttord([(disturbingFreq[i]-50)/(samples_freq/2), (disturbingFreq[i]+50)/(samples_freq/2)], [(disturbingFreq[i]-15)/(samples_freq/2), (disturbingFreq[i]+15)/(samples_freq/2)], 3, 40, False)
+    b, a = butter(firstOne, secondOne, 'bandstop', analog=False)
+
+    #aplikace FIR/IIR filtru
+    afterFiltering = filtfilt(b, a, impuls)  #TODO filtfilt vs lfilter
+
+    #generování grafu
+    plt.figure(figsize=(10,5))
+    plt.grid()
+    plt.stem(np.arange(amountOf_impulses), afterFiltering, basefmt=' ')
+    plt.gca().set_xlabel('Počet vzorků [n]')
+    plt.gca().set_title("Impulsní odezva {}. rušivé frekvence".format(i+1))
+    plt.tight_layout()
+    plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+    figureCounter += 1
+    
+    i += 1
+
+#plt.show()
+
+#========================================================
+# Úkol 8
+#========================================================
+z = []
+p = []
+k = []
+i = 0
+while True:
+    if i == 4:
+        break
+
+    firstOne, secondOne = buttord([(disturbingFreq[i]-50)/(samples_freq/2), (disturbingFreq[i]+50)/(samples_freq/2)], [(disturbingFreq[i]-15)/(samples_freq/2), (disturbingFreq[i]+15)/(samples_freq/2)], 3, 40, False)
+    b, a = butter(firstOne, secondOne, 'bandstop', analog=False)
+    helper1, helper2, helper3 = tf2zpk(b,a)
+
+    z.append(helper1)
+    p.append(helper2)
+    k.append(helper3)
+    i+=1
+
+circle = np.linspace(0, 2*np.pi, 100)
+
+_, ax = plt.subplots(2,2,figsize=(8,8))
+
+i = 0
+ax[0,0].plot(np.cos(circle), np.sin(circle))
+ax[0,0].set_title("Nulové body a póly 1. frekvence")
+ax[0,0].scatter(np.real(z[i]), np.imag(z[i]), marker='o', label='nuly')
+ax[0,0].scatter(np.real(p[i]), np.imag(p[i]), marker='x', label='póly')
+ax[0,0].set_ylabel("Imaginární složka")
+ax[0,0].grid()
+ax[0,0].legend(loc='upper left')
+
+i += 1
+ax[0,1].plot(np.cos(circle), np.sin(circle))
+ax[0,1].set_title("Nulové body a póly 2. frekvence")
+ax[0,1].scatter(np.real(z[i]), np.imag(z[i]), marker='o', label='nuly')
+ax[0,1].scatter(np.real(p[i]), np.imag(p[i]), marker='x', label='póly')
+ax[0,1].grid()
+ax[0,1].legend(loc='upper left')
+
+i += 1
+ax[1,0].plot(np.cos(circle), np.sin(circle))
+ax[1,0].set_title("Nulové body a póly 3. frekvence")
+ax[1,0].scatter(np.real(z[i]), np.imag(z[i]), marker='o', label='nuly')
+ax[1,0].scatter(np.real(p[i]), np.imag(p[i]), marker='x', label='póly')
+ax[1,0].set_xlabel("Reálná složka")
+ax[1,0].set_ylabel("Imaginární složka")
+ax[1,0].grid()
+ax[1,0].legend(loc='upper left')
+
+i += 1
+ax[1,1].plot(np.cos(circle), np.sin(circle))
+ax[1,1].set_title("Nulové body a póly 4. frekvence")
+ax[1,1].scatter(np.real(z[i]), np.imag(z[i]), marker='o', label='nuly')
+ax[1,1].scatter(np.real(p[i]), np.imag(p[i]), marker='x', label='póly')
+ax[1,1].set_xlabel("Reálná složka")
+ax[1,1].grid()
+ax[1,1].legend(loc='upper left')
+
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
+
+#========================================================
+# Úkol 9
 #========================================================
 
+w = []
+h = []
+helper1 = 0
+helper2 = 0
+i = 0
+
+while True:
+    if i == 4:
+        break
+
+    firstOne, secondOne = buttord([(disturbingFreq[i]-50)/(samples_freq/2), (disturbingFreq[i]+50)/(samples_freq/2)], [(disturbingFreq[i]-15)/(samples_freq/2), (disturbingFreq[i]+15)/(samples_freq/2)], 3, 40, False)
+    b, a = butter(firstOne, secondOne, 'bandstop', analog=False)
+
+    helper1, helper2 = freqz(b,a)
+    w.append(helper1)
+    h.append(helper2)
+    i+=1
+
+plt.figure(figsize=(10,5))
+plt.title("Frekvenční charakteristika filtru")
+plt.plot(w[0] / 2 / np.pi * samples_freq, np.abs(h[0]))
+plt.plot(w[1] / 2 / np.pi * samples_freq, np.abs(h[1]))
+plt.plot(w[2] / 2 / np.pi * samples_freq, np.abs(h[2]))
+plt.plot(w[3] / 2 / np.pi * samples_freq, np.abs(h[3]))
+plt.grid()
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+figureCounter += 1
+
+plt.show()
+#========================================================
+# Úkol 10
+#========================================================
+
+i = 0
+generateNoiseFreeSignal = []
+
+while True:
+    if i == 4:
+        break
+
+    firstOne, secondOne = buttord([(disturbingFreq[i]-50)/(samples_freq/2), (disturbingFreq[i]+50)/(samples_freq/2)], [(disturbingFreq[i]-15)/(samples_freq/2), (disturbingFreq[i]+15)/(samples_freq/2)], 3, 40, False)
+    b, a = butter(firstOne, secondOne, 'bandstop', analog=False)
+    
+    #aplikace FIR/IIR filtru
+    afterFiltering = filtfilt(b, a, out_cos[i])  #TODO filtfilt vs lfilter
+
+    generateNoiseFreeSignal.append(afterFiltering)
+
+    i+=1
+
+afterFiltering = filtfilt(b, a, samples)
+
+#generateNoiseFreeSignal:   # cos1 - 43316 vzorků
+                            # cos2 - 43316 vzorků
+                            # cos3 - 43316 vzorků
+                            # cos4 - 43316 vzorků
 
