@@ -9,9 +9,19 @@ from scipy.fft import fft
 from scipy.signal import spectrogram, lfilter, filtfilt, find_peaks, buttord, butter
 from scipy.signal.filter_design import freqz, tf2zpk
 
-#========================================================
+#funkce na generování návěští
+globalI = 1
+def createNewPar():
+    global globalI
+    print("========================================================")
+    print(" Úkol ", globalI)
+    print("========================================================")
+    globalI += 1
+
+#========================================================   
 # Úkol 1
 #========================================================
+createNewPar()
 
 #načtení signálu
 samples_freq, samples = wavfile.read("xpechm00.wav")
@@ -60,9 +70,12 @@ plt.plot(x,y)
 #plt.show()  #--UNCOMMENT
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
+
 #========================================================
 # Úkol 2
 #========================================================
+createNewPar()
+
 median = 0
 median = np.median(samples) #np.mean -> průměr (0) TODO headclass tvrdií mean, já myslel median
 print("Střední hodnota: ", int(median))
@@ -86,13 +99,11 @@ for consSample in consentratedSamples:
 exitCode = 0
 for consSample in normalizedSamples:
     if(consSample > 1):
-        print("Chyba", consSample)
-        exitCode = exitCode + 1
-    elif(consSample < -1):
-        print("Chyba", consSample)
-        exitCode = exitCode + 1
-    else:
-        exitCode = exitCode + 0
+        print("Chyba, hodnota normalizovaného signálu je > 1. ", consSample)
+        exitCode += 1
+    if(consSample < -1):
+        print("Chyba, hodnota normalizovaného signálu je < -1. ", consSample)
+        exitCode += 1
 if exitCode > 0:
     print("Celkový počet chyb:", exitCode)
 else:
@@ -145,7 +156,6 @@ while True:
 #nebo
 #délka rámce = list(sf.blocks(".wav", blocksize, overflow))
 
-
 #délka jednoho rámce
 frameTimeIn_s = 1024/samples_freq
 
@@ -161,12 +171,13 @@ plt.plot(x,y)
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 
-
 #plt.show()  #--UNCOMMENT
 
 #========================================================
 # Úkol 3
 #========================================================
+createNewPar()
+
 #testovací FFT funkce z knihovny scipy
 testFFT = []
 FFTresult = []
@@ -212,8 +223,9 @@ figureCounter += 1
 #========================================================
 # Úkol 4
 #========================================================
-#spektrogram
+createNewPar()
 
+#spektrogram
 normalizedSamplesSpectrum = np.array(normalizedSamples)
 
 freq, time, spectro = spectrogram(normalizedSamplesSpectrum, samples_freq)#, nperseg=1024, noverlap=512) TODO!!
@@ -228,10 +240,13 @@ plt.xlabel('t[s]')
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 #plt.show()
+print("Byl vygenerován logaritmický výkonový spektrogram.")
 
 #========================================================
 # Úkol 5
 #========================================================
+createNewPar()
+
 #detekce rušivých signálů
 disturbingOnes = []
 disturbingFreq = []
@@ -279,8 +294,9 @@ print("Při ověřování harmoničnosti je třeba brát v úvahu odchylku po DF
 #========================================================
 # Úkol 6
 #========================================================
-#generování frekvencí
+createNewPar()
 
+#generování frekvencí
 samplesArr = []
 i = 0
 #tvorba časových vzorků
@@ -300,13 +316,11 @@ for each in i:
     out_cos.append(np.cos(2 * np.pi * frq * np.array(samplesArr)))
     finalCos += out_cos[each]
 
-
 wavfile.write("audio/4cos.wav", samples_freq, finalCos.astype(np.int16))       #potichu, int8 lepší, ale nekvalitní
 test,_ = wavfile.read("audio/4cos.wav")
 
 if(test != 0): print("Signál složený z rušivých cosinusovek úspěšně vytvořen do audio/4cos.wav.")
 else: print("Došlo k chybě při tvorbě signálu.")
-
 
 #generování spektrogramu finální cosinusovky            TODO je to tak? TODO upravit DFT -> graf
 freq, time, spectro = spectrogram(finalCos, samples_freq)
@@ -321,12 +335,13 @@ plt.xlabel('t[s]')
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 #plt.show()
+
 #========================================================
 # Úkol 7
 #========================================================
-#pásmová zádrž jednotlivých rušivých frekvencí
+createNewPar()
 
-#pásmová zádrž nejnižší rušívé frekvence
+#pásmová zádrž jednotlivých rušivých frekvencí
 #jednotkový impuls
 amountOfimpulses = 120
 impuls = [1, *np.zeros(amountOfimpulses-1)]
@@ -343,7 +358,7 @@ while True:
     firstOne, secondOne = buttord([(disturbingFreq[i]-50)/(samples_freq/2), (disturbingFreq[i]+50)/(samples_freq/2)], [(disturbingFreq[i]-15)/(samples_freq/2), (disturbingFreq[i]+15)/(samples_freq/2)], 3, 40, False)
     b, a = butter(firstOne, secondOne, 'bandstop', analog=False)
 
-    #aplikace FIR/IIR filtru
+    #aplikace filtru
     afterFiltering = filtfilt(b, a, impuls)  #TODO filtfilt vs lfilter
 
     #generování grafu
@@ -359,10 +374,14 @@ while True:
     i += 1
 
 #plt.show()
+print("Dokončeno generování pásmových zádrží jednotlivých rušivých frekvencí.")
 
 #========================================================
 # Úkol 8
 #========================================================
+createNewPar()
+
+#aplikace filtru
 z = []
 p = []
 k = []
@@ -380,6 +399,7 @@ while True:
     k.append(helper3)
     i+=1
 
+#vykreslení 4 subgrafů do jednoho
 circle = np.linspace(0, 2*np.pi, 100)
 
 _, ax = plt.subplots(2,2,figsize=(8,8))
@@ -423,10 +443,14 @@ ax[1,1].legend(loc='upper left')
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 
+print("Určení a generování bodů a pólů úspěšně dokončeno.")
+
 #========================================================
 # Úkol 9
 #========================================================
+createNewPar()
 
+#aplikace filtru
 w = []
 h = []
 helper1 = 0
@@ -445,6 +469,7 @@ while True:
     h.append(helper2)
     i+=1
 
+#vykreslení grafu frekvenční charakteristiky
 plt.figure(figsize=(10,5))
 plt.title("Frekvenční charakteristika filtru")
 plt.plot(w[0] / 2 / np.pi * samples_freq, np.abs(h[0]))
@@ -455,14 +480,17 @@ plt.grid()
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 
-plt.show()
+print("Vygenerovány frekvenční charakteristiky jednotlivých signálů.")
+
 #========================================================
 # Úkol 10
 #========================================================
+createNewPar()
 
+#aplikace filtru
 i = 0
 generateNoiseFreeSignal = []
-
+afterFiltering = normalizedSamples
 while True:
     if i == 4:
         break
@@ -470,17 +498,37 @@ while True:
     firstOne, secondOne = buttord([(disturbingFreq[i]-50)/(samples_freq/2), (disturbingFreq[i]+50)/(samples_freq/2)], [(disturbingFreq[i]-15)/(samples_freq/2), (disturbingFreq[i]+15)/(samples_freq/2)], 3, 40, False)
     b, a = butter(firstOne, secondOne, 'bandstop', analog=False)
     
-    #aplikace FIR/IIR filtru
-    afterFiltering = filtfilt(b, a, out_cos[i])  #TODO filtfilt vs lfilter
-
-    generateNoiseFreeSignal.append(afterFiltering)
+    afterFiltering = filtfilt(b, a, afterFiltering)  #TODO filtfilt vs lfilter
 
     i+=1
 
-afterFiltering = filtfilt(b, a, samples)
+#kontrola, zdali je signál v rozsahu <-1, 1>
+exitCode = 0
+for each in afterFiltering:
+    if each > 1:
+        print("Chyba, vyfiltrovaný signál je > 1. ", each)
+        exitCode += 1
+    if each < -1:
+        print("Chyba, vyfiltrovaný signál je < -1", each)
+        exitCode += 1
 
-#generateNoiseFreeSignal:   # cos1 - 43316 vzorků
-                            # cos2 - 43316 vzorků
-                            # cos3 - 43316 vzorků
-                            # cos4 - 43316 vzorků
+if exitCode == 0:
+    print("Výsledný signál je v dynamickém rozsahu <-1, 1>")
+else:
+    print("Celkový počet chyb:", exitCode)
+
+#zápis do cílového souboru
+wavfile.write("audio/clean_bandstop.wav", samples_freq, (afterFiltering * np.iinfo(np.int16).max).astype(np.int16))
+print("Byl vytvořen soubor s vyfiltrovaným signálem. Uložen v 'audio/cleanbandstop.wav'.")
+#finální vyobrazení všech grafů
+plt.show()
+
+print("========================================================")
+print(" Konec programu")
+print("========================================================")
+print(" autor: Martin Pech (xpechm00@stud.vutbr.cz)")
+print(" ")
+print(" ")
+print(" ")
+
 
