@@ -1,9 +1,6 @@
 import soundfile as sf
 import numpy as np
 import matplotlib.pyplot as plt
-from ctypes import sizeof
-from math import dist, sqrt
-from typing import final
 from scipy.io import wavfile
 from scipy.fft import fft
 from scipy.signal import spectrogram, lfilter, filtfilt, find_peaks, buttord, butter
@@ -62,7 +59,7 @@ x = np.arange(0, timeIn_s, timeIn_s/amountOf_samples)
 y = samples
 plt.figure(figsize=(10, 5))
 plt.title("Vstupní signál")
-plt.xlabel("Čas [t]")
+plt.xlabel("Čas t[s]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.figtext(0.91, 0.45, textMaxMin, fontsize=7, color="blue", va="center")
@@ -164,7 +161,7 @@ x = np.arange(0, frameTimeIn_s, frameTimeIn_s/1024)
 y = matrix[35]
 plt.figure(figsize=(10, 5))
 plt.title("Znělý signál - rámec 2")
-plt.xlabel("Čas [t]")
+plt.xlabel("Čas t[s]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
@@ -211,7 +208,7 @@ x = np.arange(0, samples_freq/2, samples_freq/2/512) #od nuly po FS/2 (1024 vzor
 y = np.abs(FFTresult[1:513])   #má délku 1024 prvků FFTresult[:512]
 plt.figure(figsize=(10, 5))
 plt.title("Graf DFT - rámec 2")
-plt.xlabel("Frekvence [Hz]")
+plt.xlabel("Frekvence f[Hz]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
@@ -235,8 +232,8 @@ plt.title("Spectrogram")
 plt.grid(False)
 plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet')
 plt.colorbar()
-plt.ylabel('f[Hz]')
-plt.xlabel('t[s]')
+plt.ylabel('Frekvence f[Hz]')
+plt.xlabel('Čas t[s]')
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 #plt.show()
@@ -330,8 +327,8 @@ plt.title("Spectrogram výsledné cosinusovky")
 plt.grid(False)
 plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet')
 plt.colorbar()
-plt.ylabel('f[Hz]')
-plt.xlabel('t[s]')
+plt.ylabel('Frekvence f[Hz]')
+plt.xlabel('Čas t[s]')
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
 #plt.show()
@@ -476,6 +473,7 @@ plt.plot(w[0] / 2 / np.pi * samples_freq, np.abs(h[0]))
 plt.plot(w[1] / 2 / np.pi * samples_freq, np.abs(h[1]))
 plt.plot(w[2] / 2 / np.pi * samples_freq, np.abs(h[2]))
 plt.plot(w[3] / 2 / np.pi * samples_freq, np.abs(h[3]))
+plt.xlabel("Frekvence f[Hz]")
 plt.grid()
 plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
 figureCounter += 1
