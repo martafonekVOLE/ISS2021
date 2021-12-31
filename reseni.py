@@ -65,7 +65,7 @@ plt.grid(True)
 plt.figtext(0.91, 0.45, textMaxMin, fontsize=7, color="blue", va="center")
 plt.plot(x,y)
 #plt.show()  #--UNCOMMENT
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
 figureCounter += 1
 
 #========================================================
@@ -160,12 +160,12 @@ frameTimeIn_s = 1024/samples_freq
 x = np.arange(0, frameTimeIn_s, frameTimeIn_s/1024)
 y = matrix[35]
 plt.figure(figsize=(10, 5))
-plt.title("Znělý signál - rámec 2")
+plt.title("Znělý signál - rámec 35")
 plt.xlabel("Čas t[s]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
 figureCounter += 1
 
 #plt.show()  #--UNCOMMENT
@@ -178,14 +178,14 @@ createNewPar()
 #testovací FFT funkce z knihovny scipy
 testFFT = []
 FFTresult = []
-testFFT = fft(matrix[35]) #TODO maybe 23?
+testFFT = fft(matrix[2]) 
 
-#moje FFT funkce            TODO - je správně? Správný rámec? Co ukazovat má? Co je tam navíc (na začátku) Správné osy
+#moje FFT funkce           
 N = 1024
 n = np.arange(N)
 k = n.reshape((N,1))
 M = np.exp(-2j * np.pi * k * n / N)
-FFTresult = np.dot(M, matrix[35])
+FFTresult = np.dot(M, matrix[2])
 
 #srovnání mojí DFT funkce s FFT funkcí
 if(np.allclose(FFTresult, testFFT) == True):
@@ -193,8 +193,7 @@ if(np.allclose(FFTresult, testFFT) == True):
 else:
     print("Moje FFT se neshoduje s scipy.fft!")
 
-#načtení periodického rámce do FFTresult
-FFTresult = np.dot(M, matrix[2])
+#načtení periodického rámce do FFTresultToPrint
 FFTresultToPrint = []
 i = 1
 while True:
@@ -203,7 +202,7 @@ while True:
     FFTresultToPrint.append(FFTresult[i])
     i = i + 1
 
-#graf k DFT - použití znělého rámce, tj. rámce číslo 8
+#graf k DFT - použití periodického rámce (tj. rámec 2)
 x = np.arange(0, samples_freq/2, samples_freq/2/512) #od nuly po FS/2 (1024 vzorků)
 y = np.abs(FFTresult[1:513])   #má délku 1024 prvků FFTresult[:512]
 plt.figure(figsize=(10, 5))
@@ -212,7 +211,7 @@ plt.xlabel("Frekvence f[Hz]")
 plt.ylabel("Amplituda")
 plt.grid(True)
 plt.plot(x,y)
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
 figureCounter += 1
 #plt.show()
 #print(np.max(np.abs(np.real(testFFT))))
@@ -234,7 +233,7 @@ plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet'
 plt.colorbar()
 plt.ylabel('Frekvence f[Hz]')
 plt.xlabel('Čas t[s]')
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=100)
 figureCounter += 1
 #plt.show()
 print("Byl vygenerován logaritmický výkonový spektrogram.")
@@ -329,7 +328,7 @@ plt.pcolormesh(time, freq, 10 * np.log10(spectro), shading='gouraud', cmap='jet'
 plt.colorbar()
 plt.ylabel('Frekvence f[Hz]')
 plt.xlabel('Čas t[s]')
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
 figureCounter += 1
 #plt.show()
 
@@ -365,7 +364,7 @@ while True:
     plt.gca().set_xlabel('Počet vzorků [n]')
     plt.gca().set_title("Impulsní odezva {}. rušivé frekvence".format(i+1))
     plt.tight_layout()
-    plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+    plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
     figureCounter += 1
     
     i += 1
@@ -437,7 +436,7 @@ ax[1,1].set_xlabel("Reálná složka")
 ax[1,1].grid()
 ax[1,1].legend(loc='upper left')
 
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
 figureCounter += 1
 
 print("Určení a generování bodů a pólů úspěšně dokončeno.")
@@ -475,7 +474,7 @@ plt.plot(w[2] / 2 / np.pi * samples_freq, np.abs(h[2]))
 plt.plot(w[3] / 2 / np.pi * samples_freq, np.abs(h[3]))
 plt.xlabel("Frekvence f[Hz]")
 plt.grid()
-plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=400)
+plt.savefig('Figure_' + str(figureCounter) + '.png', dpi=200)
 figureCounter += 1
 
 print("Vygenerovány frekvenční charakteristiky jednotlivých signálů.")
